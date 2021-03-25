@@ -1,7 +1,23 @@
+import { GetStaticProps } from 'next'
 import Head from 'next/head'
+import { getPrismicClient } from '../../services/prismic'
+import Prismic from '@prismicio/client'
+import { RichText } from 'prismic-dom'//convert prismic format to text or html
+
 import styles from './styles.module.scss'
 
-export default function Posts(){
+type Post = {
+  slug:string;
+  title:string;
+  excerpt:string;
+  updatedAt:string;
+}
+
+interface PostProps{
+  posts: Post[];
+}
+
+export default function Posts({posts}: PostProps){
   return (
     <>
     <Head>
@@ -10,37 +26,50 @@ export default function Posts(){
 
     <main className={styles.container}>
       <div className={styles.posts}>
-        <a href="">
-          <time>12 de marco de 2021</time>
-          <strong>Titulo do post</strong>
-          <p>
-            Lorem, ipsum dolor sit amet consectetur adipisicing elit. Facilis veniam culpa 
-            consectetur quibusdam mollitia obcaecati saepe impedit modi aperiam itaque quia magni 
-            deleniti rerum adipisci, officiis quisquam repudiandae dolore optio?
-          </p>
+        {posts.map(({slug,title,excerpt,updatedAt})=>(
+          <a key={slug} href="#">
+          <time>{updatedAt}</time>
+          <strong>{title}</strong>
+          <p>{excerpt}</p>
         </a>
-
-        <a href="">
-          <time>12 de marco de 2021</time>
-          <strong>Titulo do post</strong>
-          <p>
-            Lorem, ipsum dolor sit amet consectetur adipisicing elit. Facilis veniam culpa 
-            consectetur quibusdam mollitia obcaecati saepe impedit modi aperiam itaque quia magni 
-            deleniti rerum adipisci, officiis quisquam repudiandae dolore optio?
-          </p>
-        </a>
-
-        <a href="">
-          <time>12 de marco de 2021</time>
-          <strong>Titulo do post</strong>
-          <p>
-            Lorem, ipsum dolor sit amet consectetur adipisicing elit. Facilis veniam culpa 
-            consectetur quibusdam mollitia obcaecati saepe impedit modi aperiam itaque quia magni 
-            deleniti rerum adipisci, officiis quisquam repudiandae dolore optio?
-          </p>
-        </a>
+        ))}
       </div>
     </main>
     </>
   )
+}
+
+export const getStaticProps: GetStaticProps = async () => {
+  const prismic = getPrismicClient()
+
+  const response = await prismic.query([
+    Prismic.predicates.at('document.type', 'post')
+  ], {
+    fetch: ['post.title','post.content'],
+    pageSize: 100,
+  })
+
+  //formatting data (text, date, title)
+  const posts = response.results.map(post=>{
+    return {
+      slug: post.uid,
+      title:RichText.asText(post.data.title),
+      //finding the first paragraph to show return its text or empty string
+      //.?text -> if the find return undefined, disconsider .text
+      excerpt: post.data.content.find(content=>content.type==='paragraph')?.text ?? '',
+      updatedAt: new Date(post.last_publication_date).toLocaleDateString('pt-BR',{
+        day: '2-digit',
+        month:'long',
+        year:'numeric'
+      })
+    }
+  })
+
+  console.log(posts)
+
+  return {
+    props: {
+      posts
+    }
+  }
 }

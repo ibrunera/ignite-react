@@ -13,7 +13,7 @@ export default NextAuth({
     }),
   ],
   callbacks: {
-    async signIn(user,acoount, profile){
+    async signIn(user,account, profile){
 
       try {
         await fauna.query(
