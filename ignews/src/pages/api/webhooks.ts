@@ -35,7 +35,7 @@ export default async (request: NextApiRequest, response: NextApiResponse) =>{
     const buf = await buffer(request)
     const secret = request.headers['stripe-signature']
 
-    //checking if its the same key the way stripe recomends
+    //checking if its the same key the way stripe recommends
     let event: Stripe.Event
 
     try{
@@ -45,8 +45,6 @@ export default async (request: NextApiRequest, response: NextApiResponse) =>{
     }
 
     const { type } = event
-
-    console.log('->event.type:'+type)
 
     if(relevantEvents.has(type)){
       try {
